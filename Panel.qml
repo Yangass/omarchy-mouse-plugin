@@ -95,6 +95,8 @@ Panel {
     var val = Math.round(Number(dpi))
     root.activeDpi = val
     Quickshell.execDetached([root.mouseControlBin, "set-dpi", String(val)])
+    // The helper snaps to the sensor's nearest supported DPI; read back what landed.
+    refreshSoon.restart()
   }
 
   function setRate(rate) {
@@ -200,6 +202,12 @@ Panel {
     onTriggered: root.refresh()
   }
 
+  Timer {
+    id: refreshSoon
+    interval: 1500
+    onTriggered: root.refresh()
+  }
+
   Component.onCompleted: root.refresh()
   onOpenedChanged: if (root.opened) root.refresh()
 
@@ -245,6 +253,10 @@ Panel {
         id: scrollArea
         anchors.fill: parent
         clip: true
+        // Keep content off the clip edge: at fractional scales (e.g. 1.25) the clip
+        // otherwise eats the 1px left border of the first chip in each button row.
+        leftPadding: 1
+        rightPadding: 1
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ScrollBar.vertical.policy: contentCol.implicitHeight > height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
         contentWidth: availableWidth
@@ -670,15 +682,34 @@ Panel {
                 anchors.verticalCenter: parent.verticalCenter
               }
 
-              Text {
+              // Type any value (Enter or click away to apply); the helper snaps it to the sensor.
+              Row {
                 id: dpiLabel
-                text: (dpiSlider.dragging ? dpiSlider.liveValue : root.activeDpi) + " DPI"
-                color: Qt.darker(root.barForeground, 1.4)
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
+                spacing: Style.space(6)
+
+                TextField {
+                  id: dpiField
+                  text: String(dpiSlider.dragging ? dpiSlider.liveValue : root.activeDpi)
+                  width: Style.space(64)
+                  verticalPadding: Style.space(2)
+                  horizontalAlignment: TextInput.AlignRight
+                  anchors.verticalCenter: parent.verticalCenter
+                  font.pixelSize: Style.font.caption
+                  font.bold: true
+                  validator: IntValidator { bottom: 100; top: 26000 }
+                  onEditingFinished: if (Number(text) !== root.activeDpi) root.setDpi(text)
+                }
+
+                Text {
+                  text: "DPI"
+                  color: Qt.darker(root.barForeground, 1.4)
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                  font.bold: true
+                  anchors.verticalCenter: parent.verticalCenter
+                }
               }
             }
 
