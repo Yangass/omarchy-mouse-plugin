@@ -21,6 +21,7 @@ Panel {
   property var rates: [125, 250, 500, 1000]
   property real hyprSensitivity: 0.35
   property bool showPercentage: false
+  property string ratbagError: ""
 
   // Lighting properties
   property bool lightingEnabled: true
@@ -154,6 +155,7 @@ Panel {
           if (data.name) root.deviceName = data.name
           if (data.battery !== undefined) root.battery = data.battery
           if (data.battery_status) root.batteryStatus = data.battery_status
+          root.ratbagError = data.ratbag_error || ""
           if (data.active_dpi && !dpiSlider.dragging) root.activeDpi = data.active_dpi
           if (data.active_rate) root.activeRate = data.active_rate
           if (Array.isArray(data.dpis) && data.dpis.length > 0) root.dpis = data.dpis
@@ -678,6 +680,16 @@ Panel {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
               }
+            }
+
+            Text {
+              width: parent.width
+              visible: root.ratbagError !== ""
+              text: "Can't reach the mouse: " + root.ratbagError
+              color: Color.urgent
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.Wrap
             }
 
             PanelSlider {
